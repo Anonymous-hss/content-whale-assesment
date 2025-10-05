@@ -17,3 +17,13 @@ A pixel-perfect, responsive Next.js site replicating the provided Figma designs 
 npm install
 npm run dev
 ```
+
+Folder Structure
+
+```bash
+/app/blog → Blog Listing Components
+
+/app/api/blogs → Mock JSON API
+
+/app/components → Shared Layout Components
+```
