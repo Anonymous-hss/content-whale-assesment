@@ -1,17 +1,17 @@
 # Suvit Blog & Homepage (Next.js Assignment)
 
-## 🚀 Overview
+## Overview
 
 A pixel-perfect, responsive Next.js site replicating the provided Figma designs for the Homepage and Blog Listing page. Includes dynamic data loading, tag filtering, and responsive grid layouts.
 
-## 🧩 Tech Stack
+## Tech Stack
 
 - Next.js (App Router)
 - TypeScript
 - Tailwind CSS
 - Vercel Deployment
 
-## 💾 Setup
+## Setup
 
 ```bash
 npm install
