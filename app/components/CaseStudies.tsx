@@ -152,6 +152,64 @@ export default function CaseStudies() {
     el.scrollTo({ left: i * step, behavior: "smooth" });
   };
 
+  /* =========================
+   * Hover vs Touch logic
+   * - hoverEnabled === true => keep original group-hover behavior (desktop)
+   * - hoverEnabled === false => use click/tap to toggle "activeIndex" and
+   *   apply inline styles to mimic the hover-animations (tablet/mobile)
+   * ========================= */
+  const [hoverEnabled, setHoverEnabled] = useState<boolean>(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      // enable hover only on large desktop-like devices with a fine pointer
+      const supportsHover = window.matchMedia(
+        "(hover: hover) and (pointer: fine)"
+      ).matches;
+      // Use 1024px as the safe desktop cutoff so tablets (md) are treated as touch
+      const isWide = window.innerWidth >= 1024;
+      setHoverEnabled(Boolean(supportsHover && isWide));
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    // also listen for changes to hover media query (some devices can change)
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const mqHandler = () => update();
+    if (mq.addEventListener) mq.addEventListener("change", mqHandler);
+    else (mq as any).addListener(mqHandler);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      if (mq.removeEventListener) mq.removeEventListener("change", mqHandler);
+      else (mq as any).removeListener(mqHandler);
+    };
+  }, []);
+
+  // close any active card when clicking outside the section (touch devices)
+  useEffect(() => {
+    if (hoverEnabled) return; // desktop keeps hover; no extra document listener needed
+    const onDocClick = (e: MouseEvent) => {
+      const sec = sectionRef.current;
+      if (!sec) return;
+      if (!sec.contains(e.target as Node)) {
+        setActiveIndex(null);
+      }
+    };
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [hoverEnabled]);
+
+  const toggleCard = (idx: number) => {
+    if (hoverEnabled) return; // ignore clicks on desktop — hover handles it
+    setActiveIndex((cur) => (cur === idx ? null : idx));
+  };
+
+  /* Helper inline styles for non-hover (touch) devices.
+     We only inject these when hoverEnabled === false so desktop keeps Tailwind hover rules. */
+  const nonHover = !hoverEnabled;
+
   return (
     <section
       ref={sectionRef}
@@ -160,7 +218,7 @@ export default function CaseStudies() {
       <Wave position="top" className="text-white" />
 
       <div className="mx-auto max-w-7xl px-4 relative">
-        {/* ==================== DESKTOP LAYOUT ==================== */}
+        {/* ==================== DESKTOP / TABLET LAYOUT ==================== */}
         <div className="hidden md:flex items-start gap-10">
           {/* LEFT COPY (STATIC) */}
           <div className="shrink-0 w-[320px] sm:w-[380px] md:w-[420px]">
@@ -202,8 +260,11 @@ export default function CaseStudies() {
               className="flex gap-6 pr-6 will-change-transform"
               style={{ transform: "translateX(0px)" }}
             >
-              {/* ---------- CARD 1 (desktop) ---------- */}
-              <article className="group min-w-[380px] md:min-w-[420px] max-w-[460px] rounded-2xl border border-[#E3E3E3] bg-gradient-to-b from-white to-[#FFE7E7] shadow-[0_10px_30px_rgba(19,18,66,0.06)] p-6 relative overflow-hidden">
+              {/* ---------- CARD 1 (desktop/tablet) ---------- */}
+              <article
+                onClick={() => toggleCard(0)}
+                className="group min-w-[380px] md:min-w-[420px] max-w-[460px] rounded-2xl border border-[#E3E3E3] bg-gradient-to-b from-white to-[#FFE7E7] shadow-[0_10px_30px_rgba(19,18,66,0.06)] p-6 relative overflow-hidden"
+              >
                 <div className="relative z-[2]">
                   <img
                     src="/case-studies/Khatabook.svg"
@@ -216,8 +277,37 @@ export default function CaseStudies() {
                 </div>
 
                 {/* hover stats */}
-                <div className="pointer-events-none absolute left-5 right-5 top-[140px] grid grid-cols-2 gap-4 opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0 z-[1]">
-                  <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] translate-x-6 group-hover:translate-x-0 transition-transform duration-500">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-5 right-5 top-[140px] grid grid-cols-2 gap-4 opacity-0 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-y-0 z-[1]"
+                  // Inline style for touch: show/hide + translate override when active
+                  style={
+                    nonHover
+                      ? {
+                          opacity: activeIndex === 0 ? 1 : 0,
+                          transform:
+                            activeIndex === 0
+                              ? "translateY(0)"
+                              : "translateY(8px)",
+                          transition: "opacity .3s, transform .45s",
+                        }
+                      : undefined
+                  }
+                >
+                  <div
+                    className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] translate-x-6 group-hover:translate-x-0 transition-transform duration-500"
+                    style={
+                      nonHover
+                        ? {
+                            transform:
+                              activeIndex === 0
+                                ? "translateX(0)"
+                                : "translateX(24px)",
+                            transition: "transform .5s",
+                          }
+                        : undefined
+                    }
+                  >
                     <div className="text-[#A3131D] text-[14px] leading-none">
                       Keywords Ranked
                     </div>
@@ -225,7 +315,21 @@ export default function CaseStudies() {
                       28316
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] -translate-x-6 group-hover:translate-x-0 transition-transform duration-500 delay-75">
+
+                  <div
+                    className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] -translate-x-6 group-hover:translate-x-0 transition-transform duration-500 delay-75"
+                    style={
+                      nonHover
+                        ? {
+                            transform:
+                              activeIndex === 0
+                                ? "translateX(0)"
+                                : "translateX(-24px)",
+                            transition: "transform .5s .075s",
+                          }
+                        : undefined
+                    }
+                  >
                     <div className="text-[#A3131D] text-[14px] leading-none">
                       New Heights
                     </div>
@@ -233,7 +337,21 @@ export default function CaseStudies() {
                       17x
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] translate-x-6 group-hover:translate-x-0 transition-transform duration-500 delay-150">
+
+                  <div
+                    className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] translate-x-6 group-hover:translate-x-0 transition-transform duration-500 delay-150"
+                    style={
+                      nonHover
+                        ? {
+                            transform:
+                              activeIndex === 0
+                                ? "translateX(0)"
+                                : "translateX(24px)",
+                            transition: "transform .5s .15s",
+                          }
+                        : undefined
+                    }
+                  >
                     <div className="text-[#A3131D] text-[14px] leading-none">
                       New Heights
                     </div>
@@ -241,7 +359,21 @@ export default function CaseStudies() {
                       17x
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] -translate-x-6 group-hover:translate-x-0 transition-transform duration-500 delay-200">
+
+                  <div
+                    className="rounded-2xl bg-white px-5 py-4 text-center shadow-[0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-[#E8E2E5] -translate-x-6 group-hover:translate-x-0 transition-transform duration-500 delay-200"
+                    style={
+                      nonHover
+                        ? {
+                            transform:
+                              activeIndex === 0
+                                ? "translateX(0)"
+                                : "translateX(-24px)",
+                            transition: "transform .5s .2s",
+                          }
+                        : undefined
+                    }
+                  >
                     <div className="text-[#A3131D] text-[14px] leading-none">
                       Traffic Growth
                     </div>
@@ -260,20 +392,58 @@ export default function CaseStudies() {
                   src="/case-studies/NothingPhone.svg"
                   alt="Nothing Phone 1"
                   className="relative z-[1] mt-6 w-full max-w-[420px] rounded-[14px] transition-transform duration-500 ease-out group-hover:translate-y-[240px]"
+                  style={
+                    nonHover
+                      ? {
+                          transform:
+                            activeIndex === 0
+                              ? "translateY(240px)"
+                              : "translateY(0)",
+                          transition: "transform .5s",
+                        }
+                      : undefined
+                  }
                 />
               </article>
 
-              {/* ---------- CARD 2 (desktop) ---------- */}
-              <article className="group min-w-[380px] md:min-w-[420px] max-w-[460px] rounded-2xl border border-[#E3E3E3] bg-gradient-to-br from-white to-[#F1FFFF] shadow-[0_10px_30px_rgba(19,18,66,0.06)] p-6 relative overflow-hidden">
+              {/* ---------- CARD 2 (desktop/tablet) ---------- */}
+              <article
+                onClick={() => toggleCard(1)}
+                className="group min-w-[380px] md:min-w-[420px] max-w-[460px] rounded-2xl border border-[#E3E3E3] bg-gradient-to-br from-white to-[#F1FFFF] shadow-[0_10px_30px_rgba(19,18,66,0.06)] p-6 relative overflow-hidden"
+              >
                 <img
                   src="/case-studies/RealisticIDCards.svg"
                   alt="Heritage Hospitals Badge"
                   className="mx-auto w-[230px] rounded-md transition-transform duration-500 group-hover:-translate-y-[72%]"
+                  style={
+                    nonHover
+                      ? {
+                          transform:
+                            activeIndex === 1
+                              ? "translateY(-72%)"
+                              : "translateY(0)",
+                          transition: "transform .5s",
+                        }
+                      : undefined
+                  }
                 />
 
                 <div className="absolute inset-x-0 top-[24%] z-[1] hidden md:flex flex-col gap-3 px-4">
                   <div className="flex gap-3">
-                    <div className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-4 py-4 shadow-sm translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0 text-right">
+                    <div
+                      className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-4 py-4 shadow-sm translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0 text-right"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 1
+                                  ? "translateX(0)"
+                                  : "translateX(-120%)",
+                              transition: "transform .5s",
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="flex items-start justify-end gap-2 text-[#085681]">
                         <img
                           src="/images/slide-2-gloab.svg"
@@ -285,7 +455,20 @@ export default function CaseStudies() {
                         </div>
                       </div>
                     </div>
-                    <div className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-4 py-4 shadow-sm translate-x-[120%] transition-transform duration-500 group-hover:translate-x-0 delay-100 text-left">
+                    <div
+                      className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-4 py-4 shadow-sm translate-x-[120%] transition-transform duration-500 group-hover:translate-x-0 delay-100 text-left"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 1
+                                  ? "translateX(0)"
+                                  : "translateX(120%)",
+                              transition: "transform .5s .1s",
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="flex items-start gap-2 text-[#085681]">
                         <img
                           src="/images/slide-two-start.svg"
@@ -300,7 +483,20 @@ export default function CaseStudies() {
                   </div>
 
                   <div className="flex gap-3">
-                    <div className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-5 py-4 text-center shadow-sm translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0 delay-150">
+                    <div
+                      className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-5 py-4 text-center shadow-sm translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0 delay-150"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 1
+                                  ? "translateX(0)"
+                                  : "translateX(-120%)",
+                              transition: "transform .5s .15s",
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="text-[#085681] text-sm">
                         Keywords Ranked
                       </div>
@@ -308,7 +504,20 @@ export default function CaseStudies() {
                         10,047
                       </div>
                     </div>
-                    <div className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-5 py-4 text-center shadow-sm translate-x-[120%] transition-transform duration-500 group-hover:translate-x-0 delay-200">
+                    <div
+                      className="rounded-[14px] border border-[#d9d2db] bg-white/95 px-5 py-4 text-center shadow-sm translate-x-[120%] transition-transform duration-500 group-hover:translate-x-0 delay-200"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 1
+                                  ? "translateX(0)"
+                                  : "translateX(120%)",
+                              transition: "transform .5s .2s",
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="text-[#085681] text-sm">
                         Traffic Growth
                       </div>
@@ -332,8 +541,11 @@ export default function CaseStudies() {
                 </div>
               </article>
 
-              {/* ---------- CARD 3 (desktop) ---------- */}
-              <article className="group min-w-[380px] md:min-w-[420px] max-w-[460px] rounded-2xl border border-[#E3E3E3] bg-gradient-to-br from-white to-[#FDEDFD] shadow-[0_10px_30px_rgba(19,18,66,0.06)] p-6 relative overflow-hidden">
+              {/* ---------- CARD 3 (desktop/tablet) ---------- */}
+              <article
+                onClick={() => toggleCard(2)}
+                className="group min-w-[380px] md:min-w-[420px] max-w-[460px] rounded-2xl border border-[#E3E3E3] bg-gradient-to-br from-white to-[#FDEDFD] shadow-[0_10px_30px_rgba(19,18,66,0.06)] p-6 relative overflow-hidden"
+              >
                 <div className="text-center">
                   <img
                     src="/case-studies/slider-logo-3.png"
@@ -354,7 +566,20 @@ export default function CaseStudies() {
 
                 <div className="pointer-events-none absolute inset-x-0 top-[38%] z-[1] hidden md:flex flex-col gap-3 px-5">
                   <div className="flex w-full justify-center">
-                    <div className="rounded-2xl border border-[#E9D7F3] bg-white px-5 py-3 shadow-sm flex items-center gap-3 translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0">
+                    <div
+                      className="rounded-2xl border border-[#E9D7F3] bg-white px-5 py-3 shadow-sm flex items-center gap-3 translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 2
+                                  ? "translateX(0)"
+                                  : "translateX(-120%)",
+                              transition: "transform .5s",
+                            }
+                          : undefined
+                      }
+                    >
                       <img
                         src="/case-studies/slider-logo-3.png"
                         alt=""
@@ -367,7 +592,20 @@ export default function CaseStudies() {
                   </div>
 
                   <div className="flex gap-3 justify-center">
-                    <div className="rounded-2xl border border-[#E9D7F3] bg-white px-5 py-3 text-center shadow-sm translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0 delay-150">
+                    <div
+                      className="rounded-2xl border border-[#E9D7F3] bg-white px-5 py-3 text-center shadow-sm translate-x-[-120%] transition-transform duration-500 group-hover:translate-x-0 delay-150"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 2
+                                  ? "translateX(0)"
+                                  : "translateX(-120%)",
+                              transition: "transform .5s .15s",
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="text-[#b036ce] text-sm">
                         Keywords Ranked
                       </div>
@@ -375,7 +613,20 @@ export default function CaseStudies() {
                         28,316
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-[#E9D7F3] bg-white px-5 py-3 text-center shadow-sm translate-x-[120%] transition-transform duration-500 group-hover:translate-x-0 delay-200">
+                    <div
+                      className="rounded-2xl border border-[#E9D7F3] bg-white px-5 py-3 text-center shadow-sm translate-x-[120%] transition-transform duration-500 group-hover:translate-x-0 delay-200"
+                      style={
+                        nonHover
+                          ? {
+                              transform:
+                                activeIndex === 2
+                                  ? "translateX(0)"
+                                  : "translateX(120%)",
+                              transition: "transform .5s .2s",
+                            }
+                          : undefined
+                      }
+                    >
                       <div className="text-[#b036ce] text-sm">New Heights</div>
                       <div className="text-[#b036ce] font-serif text-4xl font-semibold">
                         17x
@@ -388,6 +639,17 @@ export default function CaseStudies() {
                   src="/case-studies/slider-img-3.png"
                   alt=""
                   className="relative z-[1] mt-6 w-full rounded-md transition-transform duration-500 group-hover:translate-y-[72%]"
+                  style={
+                    nonHover
+                      ? {
+                          transform:
+                            activeIndex === 2
+                              ? "translateY(72%)"
+                              : "translateY(0)",
+                          transition: "transform .5s",
+                        }
+                      : undefined
+                  }
                 />
               </article>
             </div>
@@ -428,7 +690,7 @@ export default function CaseStudies() {
               <img
                 src="/case-studies/NothingPhone.svg"
                 alt="Nothing Phone 1"
-                className="relative z-[1] mt-6 w-full max-w-[420px] rounded-[14px]"
+                className="relative z-[1] mt-[100px] w-full max-w-[420px] rounded-[14px]"
               />
             </article>
 

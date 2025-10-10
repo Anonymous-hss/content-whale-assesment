@@ -70,31 +70,30 @@ export default function Testimonials() {
   const next = () => setIdx((i) => (i === TESTIMONIALS.length - 1 ? 0 : i + 1));
 
   return (
-    <section className="relative bg-gradient-to-b from-[#FFF6E9]/70 to-[#F4F1FF]/70 py-16 md:py-24 overflow-hidden">
+    <section className="relative bg-gradient-to-b from-[#FFF6E9]/70 to-[#F4F1FF]/70 py-16 md:py-24 overflow-x-hidden">
       <Wave position="top" className="text-white" />
 
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Desktop: 2 cols. Mobile: stack with heading first (order classes below) */}
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+      {/* ✅ Remove side padding on very small screens to stop overflow */}
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-4">
+        {/* ✅ Flex instead of grid so small screens don’t over-stretch */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* RIGHT on desktop / TOP on mobile */}
-          <div className="order-1 lg:order-2">
-            <h2 className="text-4xl md:text-5xl font-semibold text-[#1B1B22] leading-tight text-center lg:text-left">
+          <div className="order-1 lg:order-2 w-full">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#1B1B22] leading-tight text-center lg:text-left">
               Don’t Just Take Our <br className="hidden md:block" />
               Word for it
             </h2>
 
-            <p className="mt-5 text-lg text-[#4A4A55] text-center lg:text-left">
+            <p className="mt-5 text-base sm:text-lg text-[#4A4A55] text-center lg:text-left">
               We’ve been reviewed more than 20,000 times with{" "}
               <br className="hidden md:block" />
               an average of 4.5 out 5 rating.
             </p>
 
-            {/* Ratings:
-                - Mobile: three cards in a row (no separators)
-                - Desktop: inline with vertical separators for perfect alignment */}
-            <div className="mt-10 lg:mt-12">
+            {/* Ratings */}
+            <div className="mt-10 lg:mt-12 w-full overflow-hidden">
               {/* Mobile/Tablet */}
-              <div className="grid grid-cols-3 gap-6 sm:gap-8 lg:hidden">
+              <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:hidden">
                 <RatingBlock
                   logo="Clutch"
                   color="#0A6"
@@ -141,14 +140,15 @@ export default function Testimonials() {
             </div>
           </div>
 
-          {/* LEFT on desktop / BOTTOM on mobile (slider card) */}
-          <div className="order-2 lg:order-1">
-            <div className="relative mx-auto max-w-[680px]">
+          {/* LEFT on desktop / BOTTOM on mobile */}
+          <div className="order-2 lg:order-1 w-full">
+            {/* ✅ Key fix: width fully fluid on all screens */}
+            <div className="relative w-full overflow-hidden max-w-full sm:max-w-[680px] mx-auto px-2">
               {/* Prev */}
               <button
                 aria-label="Previous"
                 onClick={prev}
-                className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 rounded-full border border-black/10 bg-white/90 p-2 hover:shadow-sm md:-left-4"
+                className="absolute left-1 sm:-left-3 top-1/2 -translate-y-1/2 z-10 rounded-full border border-black/10 bg-white/90 p-2 hover:shadow-sm"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path
@@ -165,7 +165,7 @@ export default function Testimonials() {
               <button
                 aria-label="Next"
                 onClick={next}
-                className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 rounded-full border border-black/10 bg-white/90 p-2 hover:shadow-sm md:-right-4"
+                className="absolute right-1 sm:-right-3 top-1/2 -translate-y-1/2 z-10 rounded-full border border-black/10 bg-white/90 p-2 hover:shadow-sm"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path
@@ -179,10 +179,9 @@ export default function Testimonials() {
               </button>
 
               {/* Card */}
-              <div className="relative rounded-[18px] border border-[#E7E2F0] bg-white/95 shadow-[0_8px_30px_rgba(19,18,66,0.06)]">
-                {/* Big purple quote circle */}
-                <div className="absolute -left-6 -top-6 md:-left-8 md:-top-8 h-16 w-16 md:h-20 md:w-20 rounded-full bg-[#42175B] text-white grid place-content-center shadow-lg">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <div className="relative rounded-[18px] border border-[#E7E2F0] bg-white/95 shadow-[0_8px_30px_rgba(19,18,66,0.06)] overflow-hidden">
+                <div className="absolute -left-4 -top-4 sm:-left-6 sm:-top-6 h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-[#42175B] text-white grid place-content-center shadow-lg">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M8.5 16c0-3.59 2.91-6.5 6.5-6.5V7C10.91 7 7 10.91 7 15.5V16h1.5Zm7 0c0-3.59 2.91-6.5 6.5-6.5V7C17.91 7 14 10.91 14 15.5V16h1.5Z"
                       fill="currentColor"
@@ -190,7 +189,6 @@ export default function Testimonials() {
                   </svg>
                 </div>
 
-                {/* Slides */}
                 <div className="h-full overflow-hidden">
                   <div
                     className="flex transition-transform duration-500 ease-out"
@@ -199,9 +197,9 @@ export default function Testimonials() {
                     {TESTIMONIALS.map((t, i) => (
                       <article
                         key={i}
-                        className="min-w-full px-6 pb-8 pt-14 md:px-10 md:pt-16"
+                        className="min-w-full px-5 sm:px-6 pb-8 pt-14 md:px-10 md:pt-16"
                       >
-                        <p className="text-[18px] md:text-[20px] leading-8 text-[#432F67] font-semibold">
+                        <p className="text-[16px] sm:text-[18px] md:text-[20px] leading-7 sm:leading-8 text-[#432F67] font-semibold">
                           {t.quote}
                         </p>
 

@@ -36,7 +36,7 @@ export default function Header() {
           <Link
             href="/"
             aria-label="Go to homepage"
-            className="flex items-center"
+            className="flex items-center flex-shrink-0"
           >
             <Image
               src="/logo.svg"
@@ -48,12 +48,15 @@ export default function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-7">
+          {/* Note: nav becomes flex at md and above; it now takes available space,
+              can wrap on narrower md/tablet widths, and centers items so layout
+              doesn't overflow */}
+          <nav className="hidden md:flex items-center gap-7 md:flex-1 md:justify-center md:flex-wrap">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex items-center gap-1 text-[14px] leading-none text-ink-700 hover:text-ink-900 transition-colors"
+                className="group flex items-center gap-1 text-[14px] leading-none text-ink-700 hover:text-ink-900 transition-colors whitespace-nowrap min-w-0"
               >
                 {item.label}
                 {item.hasMenu && (
@@ -77,7 +80,8 @@ export default function Header() {
             ))}
 
             {/* "Rank On AI" + NEW badge */}
-            <div className="flex items-center gap-2 text-[14px] font-medium text-[#ff9a44] pl-90">
+            {/* Keep original styling but move the large left padding to only large screens */}
+            <div className="flex items-center gap-2 text-[14px] font-medium text-[#ff9a44] lg:pl-90">
               <span>Rank On AI</span>
               <span className="bg-accent-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
                 NEW
